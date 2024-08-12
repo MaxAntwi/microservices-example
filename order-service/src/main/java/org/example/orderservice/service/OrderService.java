@@ -1,12 +1,15 @@
 package org.example.orderservice.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.orderservice.dto.InventoryResponse;
 import org.example.orderservice.dto.OrderLineItemsRequest;
 import org.example.orderservice.dto.OrderRequest;
 import org.example.orderservice.entity.Order;
 import org.example.orderservice.entity.OrderLineItems;
+import org.example.orderservice.exceptions.OutOfStockException;
 import org.example.orderservice.repository.OrderRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -18,10 +21,12 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class OrderService {
     private final WebClient webClient;
 
     private final OrderRepository orderRepository;
+
 
     public void placeOrder(OrderRequest orderRequest) {
         Order order = new Order();
@@ -33,20 +38,23 @@ public class OrderService {
 
         List<String> skuCodes =order.getOrderLineItemsList().stream().map(OrderLineItems::getSkuCode).toList();
 
-        //Call inventory service, to check if product is in stock
-        InventoryResponse[] inventoryResponses = webClient.get()
-                .uri("http://localhost:8082/api/v1/inventory",
-                        uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes).build())
-                .retrieve()
-                .bodyToMono(InventoryResponse[].class)
-                .block();
+        try {
+            //Call inventory service, to check if product is in stock
+            InventoryResponse[] inventoryResponses = webClient.get()
+                    .uri("http://localhost:8082/api/v1/inventory",
+                            uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes).build())
+                    .retrieve()
+                    .bodyToMono(InventoryResponse[].class)
+                    .block();
 
-        Boolean allProductsInStock = Arrays.stream(inventoryResponses).allMatch(InventoryResponse::getIsInStock);
-
-        if (Boolean.TRUE.equals(allProductsInStock)) {
-            orderRepository.save(order);
-        } else {
-            throw new IllegalArgumentException("Product is not available");
+            Boolean allProductsInStock = Arrays.stream(inventoryResponses).allMatch(InventoryResponse::getIsInStock);
+            if (Boolean.TRUE.equals(allProductsInStock)) {
+                orderRepository.save(order);
+            } else {
+                throw new OutOfStockException("Product is not available", HttpStatus.OK.value());
+            }
+        } catch (Exception e) {
+            log.error("Failed to place order: {}", e.getMessage());
         }
     }
 

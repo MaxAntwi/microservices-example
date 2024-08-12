@@ -12,7 +12,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class InventoryService {
     private final InventoryRepository inventoryRepository;
-
     @Transactional(readOnly = true)
     public List<InventoryResponse> inStock(List<String> skuCode) {
         return inventoryRepository.findBySkuCodeIn(skuCode).stream().map(inv ->
