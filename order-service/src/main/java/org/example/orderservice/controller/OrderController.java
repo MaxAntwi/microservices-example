@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.orderservice.dto.OrderRequest;
 import org.example.orderservice.service.OrderService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,9 +15,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public String placeOrder(@RequestBody OrderRequest request) {
-        orderService.placeOrder(request);
-        return "Order Placed";
+    public ResponseEntity<String> placeOrder(@RequestBody OrderRequest request) {
+        return new ResponseEntity <> (orderService.placeOrder(request), HttpStatus.CREATED);
     }
 }

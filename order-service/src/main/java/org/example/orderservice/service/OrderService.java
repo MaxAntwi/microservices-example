@@ -28,7 +28,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
 
 
-    public void placeOrder(OrderRequest orderRequest) {
+    public String placeOrder(OrderRequest orderRequest) {
         Order order = new Order();
         order.setOrderNumber(UUID.randomUUID().toString());
 
@@ -50,11 +50,13 @@ public class OrderService {
             Boolean allProductsInStock = Arrays.stream(inventoryResponses).allMatch(InventoryResponse::getIsInStock);
             if (Boolean.TRUE.equals(allProductsInStock)) {
                 orderRepository.save(order);
+                return "Order Placed Successfully";
             } else {
-                throw new OutOfStockException("Product is not available", HttpStatus.OK.value());
+                throw new OutOfStockException("Product is not available", HttpStatus.BAD_REQUEST.value());
             }
         } catch (Exception e) {
             log.error("Failed to place order: {}", e.getMessage());
+            throw e;
         }
     }
 
