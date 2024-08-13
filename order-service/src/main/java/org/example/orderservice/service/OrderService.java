@@ -23,7 +23,7 @@ import java.util.UUID;
 @Transactional
 @Slf4j
 public class OrderService {
-    private final WebClient webClient;
+    private final WebClient.Builder webClientBuilder;
 
     private final OrderRepository orderRepository;
 
@@ -40,8 +40,8 @@ public class OrderService {
 
         try {
             //Call inventory service, to check if product is in stock
-            InventoryResponse[] inventoryResponses = webClient.get()
-                    .uri("http://localhost:8082/api/v1/inventory",
+            InventoryResponse[] inventoryResponses = webClientBuilder.build().get()
+                    .uri("http://inventory-service/api/v1/inventory",
                             uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes).build())
                     .retrieve()
                     .bodyToMono(InventoryResponse[].class)
