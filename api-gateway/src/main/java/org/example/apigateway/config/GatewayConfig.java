@@ -14,6 +14,9 @@ public class GatewayConfig {
                 .route("product-service", r -> r.path("/api/v1/products/**").uri("lb://product-service"))
                 //Order Service Route
                 .route("order-service", r -> r.path("/api/v1/orders/**").uri("lb://order-service"))
+                //Discovery Service Route
+                .route("discovery-server", r -> r.path("/eureka/web").filters(f -> f.setPath("/")).uri("http://localhost:8761"))
+                .route("discovery-server-static", r -> r.path("/eureka/**").uri("http://localhost:8761"))
                 .build();
     }
 }
