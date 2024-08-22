@@ -1,5 +1,6 @@
 package org.example.orderservice.service;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.orderservice.dto.InventoryResponse;
@@ -27,7 +28,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
 
-
+    @CircuitBreaker(name = "inventory", fallbackMethod = "fallbackMethod")
     public String placeOrder(OrderRequest orderRequest) {
         Order order = new Order();
         order.setOrderNumber(UUID.randomUUID().toString());
@@ -58,6 +59,10 @@ public class OrderService {
             log.error("Failed to place order: {}", e.getMessage());
             throw e;
         }
+    }
+
+    public String fallbackMethod(OrderRequest request, Throwable throwable) {
+        return "Ooops I did an oopsie, Order failed please try again";
     }
 
     public OrderLineItems mapToOrderLineItems(OrderLineItemsRequest orderLineItemsRequest) {
